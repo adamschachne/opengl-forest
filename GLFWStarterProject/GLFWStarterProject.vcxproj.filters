@@ -39,12 +39,6 @@
     <ClInclude Include="..\Geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Curve.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Coaster.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\main.cpp">
@@ -68,12 +62,6 @@
     <ClCompile Include="..\Geometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Curve.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Coaster.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shader.frag">
@@ -87,12 +75,6 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="..\skyboxshader.vert">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="..\coaster.vert">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="..\coaster.frag">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

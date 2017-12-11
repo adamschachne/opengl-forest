@@ -18,7 +18,8 @@ class Geometry : public Node
 public:
 	Geometry(glm::mat4 world, GLuint * VAO, int size, GLuint shaderprogram, glm::vec3 color, unsigned int id);
 	~Geometry();
-	void draw(glm::mat4 C);
+	void draw();
+	void draw(glm::mat4);
 	void translate(glm::vec3);
 	void update();
 	float increment;

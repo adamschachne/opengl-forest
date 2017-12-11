@@ -16,7 +16,7 @@ Geometry::~Geometry()
 	//std::cout << "deleting Geometry object" << std::endl;
 }
 
-void Geometry::draw(glm::mat4 C)
+void Geometry::draw()
 {
 	glm::mat4 modelview = Window::V * toWorld;
 	
@@ -33,6 +33,10 @@ void Geometry::draw(glm::mat4 C)
 
 	// Unbind the VAO when we're done so we don't accidentally draw extra stuff or tamper with its bound buffers
 	glBindVertexArray(0);
+}
+
+void Geometry::draw(glm::mat4)
+{
 }
 
 void Geometry::translate(glm::vec3 offset) {

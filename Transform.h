@@ -6,7 +6,6 @@
 #include <vector>
 #include "OBJObject.h"
 #include "Geometry.h"
-#include "Curve.h"
 
 class Transform : public Node
 {

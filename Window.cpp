@@ -7,13 +7,12 @@
 
 const char* window_title = "GLFW Starter Project";
 Cube * cube;
-OBJObject * sphere;
+OBJObject * tree;
 OBJObject * currentObj;
+std::vector<Geometry *> trees;
 // selectable objects
 
-Coaster * coaster;
 
-std::vector<Geometry *> Window::selectables;
 int Window::selectedIndex = -1;
 Geometry * selected = 0;
 
@@ -27,7 +26,7 @@ GLint shaderProgram;
 #define FRAGMENT_SHADER_PATH "../shader.frag"
 
 // Default camera parameters
-glm::vec3 cam_pos(0.0f, 0.0f, 20.0f);		// e  | Position of camera
+glm::vec3 cam_pos(0.0f, 0.0f, -20.0f);		// e  | Position of camera
 glm::vec3 cam_look_at(0.0f, 0.0f, 0.0f);	// d  | This is where the camera looks at
 glm::vec3 cam_up(0.0f, 1.0f, 0.0f);			// up | What orientation "up" is
 
@@ -47,7 +46,7 @@ float MovementSpeed = 2.5f;
 float MouseSensitivity = 0.1f;
 float Zoom = 45.0f;
 // Camera Attributes
-glm::vec3 Window::Position(0.0f, 600.0f, 900.0f);
+glm::vec3 Window::Position(0.0f, 0.0f, 3.0f);
 glm::vec3 OldPosition;
 glm::vec3 Front;
 glm::vec3 Right;
@@ -68,19 +67,16 @@ float Window::lightMode = 0.0f;
 float Window::lightExponent = 1.0f;
 float Window::lightField = 0.05f;
 bool Window::drawBoundingSpheres = false;
+bool Window::forward = false;
+bool Window::backward = false;
+bool Window::right = false;
+bool Window::left = false;
+
+
 
 bool Window::firstPerson = false;
 
-Curve * curve0;
-Curve * curve1;
-Curve * curve2;
-Curve * curve3;
-Curve * curve4;
-Curve * curve5;
-Curve * curve6;
-Curve * curve7;
 
-Curve * Window::highestCurve = curve0;
 float Window::highestTvalue = 12.0f;
 
 std::vector<glm::vec3> Window::trackPoints = std::vector<glm::vec3>();
@@ -118,149 +114,27 @@ void Window::initialize_objects()
 {
 	shaderProgram = LoadShaders(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 	cube = new Cube();
-	curves = std::vector<Node *>();
-	sphere = new OBJObject("../sphere.obj");
-	int sphereSize = sphere->indices.size();
-
-	curve0 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(-100, -100, -100), glm::vec3(200, 44, 72), glm::vec3(312, 120, 190), glm::vec3(481, 200, 312) }, shaderProgram, 1);
-	curve1 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(481, 200, 312), glm::vec3(650, 280, 434), glm::vec3(700, 280, 500), glm::vec3(400, 280, 500) }, shaderProgram, 4);
-	curve2 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(400, 280, 500), glm::vec3(100, 280, 500), glm::vec3(200,500, 300), glm::vec3(250, 700, 100) }, shaderProgram, 7);
-	curve3 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(250, 700, 100), glm::vec3(300, 900, -100), glm::vec3(600,550,0), glm::vec3(700, 650, 0) }, shaderProgram, 10);
-	curve4 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(700, 650, 0), glm::vec3(800, 750, 0), glm::vec3(30, 40, 500), glm::vec3(-130, -140, 100) }, shaderProgram, 13);
-	curve5 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(-130, -140, 100), glm::vec3(-290, -320, -300), glm::vec3(-400, -100, 300), glm::vec3(-650, 100, 300) }, shaderProgram, 16);
-	curve6 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(-650, 100, 300), glm::vec3(-900, 300, 300), glm::vec3(-60, 320, 500), glm::vec3(-390, 320, 300) }, shaderProgram, 19);
-	curve7 = new Curve(&(sphere->VAO), sphereSize, { glm::vec3(-390, 320, 300), glm::vec3(-720, 320, 100), glm::vec3(-400, -244, -272), glm::vec3(-100, -100, -100) }, shaderProgram, 22);
-
-	updateTrackPoints();
-
-	curve0->setNextCurve(curve1); curve0->setPrevCurve(curve7);
-	curve1->setNextCurve(curve2); curve1->setPrevCurve(curve0);
-	curve2->setNextCurve(curve3); curve2->setPrevCurve(curve1);
-	curve3->setNextCurve(curve4); curve3->setPrevCurve(curve2);
-	curve4->setNextCurve(curve5); curve4->setPrevCurve(curve3);
-	curve5->setNextCurve(curve6); curve5->setPrevCurve(curve4);
-	curve6->setNextCurve(curve7); curve6->setPrevCurve(curve5);
-	curve7->setNextCurve(curve0); curve7->setPrevCurve(curve6);
-
-	curves.push_back(curve0);
-	curves.push_back(curve1);
-	curves.push_back(curve2);
-	curves.push_back(curve3);
-	curves.push_back(curve4);
-	curves.push_back(curve5);
-	curves.push_back(curve6);
-	curves.push_back(curve7);
-
-	glm::mat4 coasterWorld = glm::mat4(1.0f) * glm::scale(glm::mat4(1.0f), glm::vec3(30.0f, 30.0f, 30.0f));
-	glm::mat4 start = selectables[0]->toWorld;
-	coasterWorld = glm::translate(glm::mat4(1.0f), glm::vec3(start[3][0], start[3][1], start[3][2])) * coasterWorld;
-	coaster = new Coaster(coasterWorld, &sphere->VAO, sphereSize, 900, -100, curve0);
-
+	tree = new OBJObject("../treemesh2.obj");
+	tree->scale(30.0f);
+	//glm::mat4 world, GLuint * VAO, int size, GLuint shaderprogram, glm::vec3 color, unsigned int id
+	for (int i = 0; i < 10; i++) {
+		Geometry * geom = new Geometry(
+			glm::translate(glm::mat4(1.0f), glm::vec3(i*50, 0, i*50))*tree->toWorld, 
+			&(tree->VAO), 
+			tree->indices.size(), 
+			shaderProgram, 
+			glm::vec3(0.1f, 0.8f, 0.1f), 
+			i);
+		trees.push_back(geom);
+	}
 	updateCameraVectors();
-}
-
-void Window::updateTrackPoints() {
-	trackPoints.clear();
-
-	for (int i = 0; i < curve0->points.size(); i++) {
-		trackPoints.push_back(curve0->points[i]);
-	}
-	for (int i = 0; i < curve1->points.size(); i++) {
-		trackPoints.push_back(curve1->points[i]);
-	}
-	for (int i = 0; i < curve2->points.size(); i++) {
-		trackPoints.push_back(curve2->points[i]);
-	}
-	for (int i = 0; i < curve3->points.size(); i++) {
-		trackPoints.push_back(curve3->points[i]);
-	}
-	for (int i = 0; i < curve4->points.size(); i++) {
-		trackPoints.push_back(curve4->points[i]);
-	}
-	for (int i = 0; i < curve5->points.size(); i++) {
-		trackPoints.push_back(curve5->points[i]);
-	}
-	for (int i = 0; i < curve6->points.size(); i++) {
-		trackPoints.push_back(curve6->points[i]);
-	}
-	for (int i = 0; i < curve7->points.size(); i++) {
-		trackPoints.push_back(curve7->points[i]);
-	}
-}
-
-glm::vec3 Window::getHighestPoint()
-{
-	glm::vec3 highest = curve0->points[0];
-	Curve * highest_curve = curve0;
-	float t_value = 0.0f;
-
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve0->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve0;
-			highest = curve0->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve1->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve1;
-			highest = curve1->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve2->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve2;
-			highest = curve2->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve3->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve3;
-			highest = curve3->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve4->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve4;
-			highest = curve4->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve5->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve5;
-			highest = curve5->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve6->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve6;
-			highest = curve6->getPosition(t);
-		}
-	}
-	for (float t = 0.0f; t <= 1.0f; t += 1.0f / 150.0f) {
-		if (curve7->getPosition(t).y > highest.y) {
-			t_value = t;
-			highest_curve = curve7;
-			highest = curve7->getPosition(t);
-		}
-	}
-
-	Window::highestCurve = highest_curve;
-	Window::highestTvalue = t_value;
-	return highest;
 }
 
 // Treat this as a destructor function. Delete dynamically allocated memory here.
 void Window::clean_up()
 {
 	delete(cube);
-	delete(sphere);
+	delete(tree);
 	//delete(robots);
 	glDeleteProgram(shaderProgram);
 }
@@ -333,7 +207,24 @@ void Window::resize_callback(GLFWwindow* window, int width, int height)
 
 void Window::idle_callback()
 {
-	coaster->update();
+
+	if (forward) {
+		//cam look at
+		Position+=(0.005f*Front);
+		updateCameraVectors();
+	}
+	if (backward) {
+		Position -= (0.005f*Front);
+		updateCameraVectors();
+	}
+	if (right) {
+		Position += (0.005f*Right);
+		updateCameraVectors();
+	}
+	if (left) {
+		Position -= (0.005f*Right);
+		updateCameraVectors();
+	}
 }
 
 void Window::display_callback(GLFWwindow* window)
@@ -354,17 +245,11 @@ void Window::display_callback(GLFWwindow* window)
 
 	// Use the shader of programID
 	glUseProgram(shaderProgram);
-	
-	for (int i = 0; i < curves.size(); i++) {
-		curves[i]->draw(glm::mat4(1.0f));
-	}
-	
-	coaster->draw(glm::mat4(1.0f));
 
-	if (firstPerson) {
-		Position = glm::vec3(coaster->toWorld[3][0], coaster->toWorld[3][1], coaster->toWorld[3][2]);
-		V = glm::lookAt(Position, coaster->currentCurve->getPosition(coaster->ticks + 1/150.0f), Up);
+	for (auto todraw : trees) {
+		todraw->draw();
 	}
+
 
 	cube->draw();
 	// Gets events, including input such as keyboard and mouse or window resizing
@@ -379,26 +264,7 @@ void Window::mouse_button_callback(GLFWwindow* window, int button, int action, i
 			// rotates
 			leftMouseHeld = true;
 		}	
-		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			rightMouseHeld = true;
-			unsigned char pix[4];
-			glReadPixels(x_old, height - y_old, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pix);
-			std::cout << (unsigned int)pix[2] << std::endl;;
-			if ((unsigned int)pix[2] > 24) {
-				selected = 0;
-				selectedIndex = -1;
-				return;
-			}
-			else {
-				try {
-					selected = selectables.at((unsigned int)pix[2] - 1);
-					//selected = selectables[(unsigned int)pix[2] - 1];
-					selectedIndex = (unsigned int)pix[2] - 1;
-				}
-				catch (const std::exception& ex) {
-					std::cerr << ex.what() << std::endl;
-				}
-			}			
+		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {			
 		}
 	}
 	if (action == GLFW_RELEASE) {
@@ -563,10 +429,8 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 				colorMode = !colorMode;
 				break;
 			case GLFW_KEY_P:
-				coaster->pause();
 				break;
 			case GLFW_KEY_H:
-				coaster->moveHighest();
 				break;
 			case GLFW_KEY_0:
 				Window::targetObject = 0;
@@ -585,10 +449,43 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 			case GLFW_KEY_C:
 				Window::toggleCameraMode();
 				break;
+			case GLFW_KEY_W:
+				forward = true;
+				backward = false;
+				break;
+			case GLFW_KEY_A:
+				left = true;
+				right = false;
+				break;
+			case GLFW_KEY_S:
+				backward = true;
+				forward = false;
+				break;
+			case GLFW_KEY_D:
+				right = true;
+				left = false;
+				break;
 			/*case GLFW_KEY_C:
 				Window::cullingEnabled = !Window::cullingEnabled;
 				std::cout << "culling: " << Window::cullingEnabled << std::endl;
 				break;*/
+		}
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		switch (key) {
+		case GLFW_KEY_W:
+			forward = false;
+			break;
+		case GLFW_KEY_A:
+			left = false;
+			break;
+		case GLFW_KEY_S:
+			backward = false;
+			break;
+		case GLFW_KEY_D:
+			right = false;
+			break;
 		}
 	}
 }

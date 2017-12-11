@@ -19,9 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Coaster.h" />
     <ClInclude Include="..\Cube.h" />
-    <ClInclude Include="..\Curve.h" />
     <ClInclude Include="..\Geometry.h" />
     <ClInclude Include="..\main.h" />
     <ClInclude Include="..\Node.h" />
@@ -31,9 +29,7 @@
     <ClInclude Include="..\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Coaster.cpp" />
     <ClCompile Include="..\Cube.cpp" />
-    <ClCompile Include="..\Curve.cpp" />
     <ClCompile Include="..\Geometry.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\OBJObject.cpp" />
@@ -42,8 +38,6 @@
     <ClCompile Include="..\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\coaster.frag" />
-    <None Include="..\coaster.vert" />
     <None Include="..\shader.frag" />
     <None Include="..\shader.vert" />
     <None Include="..\skyboxshader.frag" />

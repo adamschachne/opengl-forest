@@ -14,8 +14,6 @@
 #include "OBJObject.h"
 #include "shader.h"
 #include <cstdlib>
-#include "Curve.h"
-#include "Coaster.h"
 class Window
 {
 public:
@@ -47,7 +45,6 @@ public:
 	static glm::vec3 lightcolor;
 	static glm::vec3 lightPosition;
 	static glm::vec3 lightDirection;
-	static std::vector<Geometry *> selectables;
 	static int selectedIndex;
 	static float lightMode;
 	static float lightExponent;
@@ -64,11 +61,12 @@ public:
 	static void calculateFrustum();
 	static bool cullingEnabled;
 	static std::vector<glm::vec3> trackPoints;
-	static void updateTrackPoints();
-	static glm::vec3 getHighestPoint(); // sets highest curve and t value
-	static Curve * highestCurve;
 	static float highestTvalue;
 	static void toggleCameraMode();
 	static bool firstPerson;
+	static bool forward;
+	static bool backward;
+	static bool right;
+	static bool left;
 };
 #endif

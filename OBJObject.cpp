@@ -193,6 +193,7 @@ void OBJObject::parse(const char *filepath)
 
 		// Populate the face indices, vertices, and normals vectors with the OBJ Object data
 
+
 		if (str[1] == 'n') {
 			// normal
 			/*float x1 = glm::normalize(glm::vec3(x, y, z)).x;
@@ -203,28 +204,32 @@ void OBJObject::parse(const char *filepath)
 			//vertices.push_back(pair<char, glm::vec3>('n', glm::vec3(x, y, z)));
 		}
 		else if (str[0] == 'v') {
-			// vertex
-			if (x > x_max) {
-				x_max = x;
+			if (str[1] == 't') {
 			}
-			if (y > y_max) {
-				y_max = y;
+			else {
+				// vertex
+				if (x > x_max) {
+					x_max = x;
+				}
+				if (y > y_max) {
+					y_max = y;
+				}
+				if (z > z_max) {
+					z_max = z;
+				}
+				if (x < x_min) {
+					x_min = x;
+				}
+				if (y < y_min) {
+					y_min = y;
+				}
+				if (z < z_min) {
+					z_min = z;
+				}
+				vertices.push_back(glm::vec3(x, y, z));
+				//std::cout << glm::normalize(glm::vec3(x, y, z)).x << " " << glm::normalize(glm::vec3(x, y, z)).y << " " << glm::normalize(glm::vec3(x, y, z)).z << std::endl;
+				//vertices.push_back(pair<char, glm::vec3>('v', glm::vec3(x, y, z)));
 			}
-			if (z > z_max) {
-				z_max = z;
-			}
-			if (x < x_min) {
-				x_min = x;
-			}
-			if (y < y_min) {
-				y_min = y;
-			}
-			if (z < z_min) {
-				z_min = z;
-			}
-			vertices.push_back(glm::vec3(x, y, z));
-			//std::cout << glm::normalize(glm::vec3(x, y, z)).x << " " << glm::normalize(glm::vec3(x, y, z)).y << " " << glm::normalize(glm::vec3(x, y, z)).z << std::endl;
-			//vertices.push_back(pair<char, glm::vec3>('v', glm::vec3(x, y, z)));
 		}
 		else if (str[0] == 'f') {
 			indices.push_back((unsigned int) x - 1);
