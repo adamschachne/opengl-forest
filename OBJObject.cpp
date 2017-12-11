@@ -10,6 +10,8 @@ OBJObject::OBJObject(const char *filepath)
 	offset = glm::vec3(0.0f, 0.0f, 0.0f);
 	orbitDeg = 0.0f;
 	orbitAmt = 0.0f;
+	y_min = 0;
+	y_max = 0;
 	/*glm::mat4 rotation(1);
 	glm::mat4 orbitMat(1);
 	glm::mat4 translateMat(1);*/
@@ -131,7 +133,7 @@ void OBJObject::scale(float s) {
 	scaleVal *= s;
 	//print();
 	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(s, s, s));
-	toWorld = toWorld*scaleMat;
+	toWorld = scaleMat * toWorld;
 }
 
 void OBJObject::reset() {
@@ -140,8 +142,11 @@ void OBJObject::reset() {
 	glm::mat4 centerMatrix = glm::translate(glm::mat4(1), -mid);
 	toWorld = centerMatrix*toWorld;
 
-	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(initialScaleVal, initialScaleVal, initialScaleVal));
-	toWorld = scaleMat*toWorld;
+	//glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(initialScaleVal, initialScaleVal, initialScaleVal));
+	//toWorld = scaleMat*toWorld;
+
+	//glm::mat4 transMatrix = glm::translate(glm::mat4(1.0), { (xMin + xMax) / -2, (yMin + yMax) / -2, (zMin + zMax) / -2 });
+	//toWorld = transMatrix * toWorld;
 }
 
 void OBJObject::parse(const char *filepath) 
@@ -155,7 +160,6 @@ void OBJObject::parse(const char *filepath)
 	vector<string> toks;
 	int lines = 0;
 	float x_min, x_max;
-	float y_min, y_max;
 	float z_min, z_max;
 
 	x_min = y_min = z_min = 100.0f;
@@ -194,7 +198,7 @@ void OBJObject::parse(const char *filepath)
 		// Populate the face indices, vertices, and normals vectors with the OBJ Object data
 
 
-		if (str[1] == 'n') {
+		if (str[1] == 't') {
 			// normal
 			/*float x1 = glm::normalize(glm::vec3(x, y, z)).x;
 			float y1 = glm::normalize(glm::vec3(x, y, z)).y;
@@ -204,7 +208,7 @@ void OBJObject::parse(const char *filepath)
 			//vertices.push_back(pair<char, glm::vec3>('n', glm::vec3(x, y, z)));
 		}
 		else if (str[0] == 'v') {
-			if (str[1] == 't') {
+			if (str[1] == 'n') {
 			}
 			else {
 				// vertex

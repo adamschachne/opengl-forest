@@ -68,6 +68,8 @@ public:
 	// These variables are needed for the shader program
 	GLuint VBO, VBO2, VAO, EBO;
 	GLuint uProjection, uModelview;
+	float y_min;
+	float y_max;
 };
 
 #endif

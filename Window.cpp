@@ -26,13 +26,13 @@ GLint shaderProgram;
 #define FRAGMENT_SHADER_PATH "../shader.frag"
 
 // Default camera parameters
-glm::vec3 cam_pos(0.0f, 0.0f, -20.0f);		// e  | Position of camera
+glm::vec3 cam_pos(0.0f, 0.0f, -30.0f);		// e  | Position of camera
 glm::vec3 cam_look_at(0.0f, 0.0f, 0.0f);	// d  | This is where the camera looks at
 glm::vec3 cam_up(0.0f, 1.0f, 0.0f);			// up | What orientation "up" is
 
-const float Window::YAW = -92.6f;
+const float Window::YAW = 0.0f;
 //const float Window::YAW = 0.0f;
-const float Window::PITCH = -27.0f;
+const float Window::PITCH = 0.0f;
 //const float Window::PITCH = 0.0f;
 const float Window::SPEED = 2.5f;
 const float Window::SENSITIVTY = 0.1f;
@@ -42,7 +42,7 @@ const float Window::ZOOM = 45.0f;
 float Yaw = Window::YAW;
 float Pitch = Window::PITCH;
 // Camera options
-float MovementSpeed = 2.5f;
+float MovementSpeed = 0.5f;
 float MouseSensitivity = 0.1f;
 float Zoom = 45.0f;
 // Camera Attributes
@@ -71,6 +71,9 @@ bool Window::forward = false;
 bool Window::backward = false;
 bool Window::right = false;
 bool Window::left = false;
+OBJObject * treetest;
+OBJObject * sphere;
+OBJObject * sphere2;
 
 
 
@@ -114,18 +117,66 @@ void Window::initialize_objects()
 {
 	shaderProgram = LoadShaders(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 	cube = new Cube();
-	tree = new OBJObject("../treemesh2.obj");
-	tree->scale(30.0f);
+	tree = new OBJObject("../treemesh3.obj");
+	//tree->scale(30.0f);
+	treetest = new OBJObject("../treemesh3.obj");
+	//treetest->scale(300.0f);
+	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(300, 300,300));
+	treetest->toWorld = treetest->toWorld * scaleMat;
+	sphere = new OBJObject("../sphere.obj");
+	//sphere->scale(10.0f);
+	sphere2 = new OBJObject("../sphere.obj");
+	//sphere2->scale(20.0f);
+	sphere->translate(0, tree->y_min, 0);
+	//treetest->scale(30.0f);
 	//glm::mat4 world, GLuint * VAO, int size, GLuint shaderprogram, glm::vec3 color, unsigned int id
-	for (int i = 0; i < 10; i++) {
+	float rot;
+	float scalx;
+	float scaly;
+	float scalz;
+	float min = tree->y_min;
+	float max = tree->y_max;
+	float transx;
+	float transz;
+	const float treescale = 2500;
+	const int treevariance = 5000;
+	const int transvar = 500;
+
+	glm::mat4 rotation;
+	glm::mat4 scaling;
+	print(tree->toWorld);
+	for (int i = 0; i < 500; i++) {
+		
+		rot = rand() % 360;
+		scalx = rand() % treevariance;
+		scalx += treescale;
+		scaly = rand() % treevariance;
+		scaly += treescale;
+		scalz = rand() % treevariance;
+		scalz += treescale;
+		transx = rand() % transvar;
+		transz = rand() % transvar;
+
+		float minoffset = (abs(min) * scaly) - abs(min);
+		float maxoffset = (abs(max) * scaly) - abs(max);
+		//std::cout << tree->toWorld[3][1] << std::endl;
+		float height = abs(max - min);
+		float scaledHeight = scaly * height;
+		float offset = (scaledHeight - height) / 2;
+		
+		rotation = glm::rotate(glm::mat4(1.0f), rot / 180.0f * glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+		scaling = glm::scale(glm::mat4(1.0f), glm::vec3(scalx, scaly, scalx));
+		rotation = rotation * scaling * tree->toWorld;
 		Geometry * geom = new Geometry(
-			glm::translate(glm::mat4(1.0f), glm::vec3(i*50, 0, i*50))*tree->toWorld, 
+			glm::translate(glm::mat4(1.0f), glm::vec3(transx, offset, transz))*rotation, 
 			&(tree->VAO), 
 			tree->indices.size(), 
 			shaderProgram, 
 			glm::vec3(0.1f, 0.8f, 0.1f), 
 			i);
 		trees.push_back(geom);
+		//std::cout << "min: " << tree->y_min << std::endl;
+		//std::cout << "max: " << tree->y_max << std::endl;
 	}
 	updateCameraVectors();
 }
@@ -210,19 +261,19 @@ void Window::idle_callback()
 
 	if (forward) {
 		//cam look at
-		Position+=(0.005f*Front);
+		Position+=(MovementSpeed*Front);
 		updateCameraVectors();
 	}
 	if (backward) {
-		Position -= (0.005f*Front);
+		Position -= (MovementSpeed*Front);
 		updateCameraVectors();
 	}
 	if (right) {
-		Position += (0.005f*Right);
+		Position += (MovementSpeed*Right);
 		updateCameraVectors();
 	}
 	if (left) {
-		Position -= (0.005f*Right);
+		Position -= (MovementSpeed*Right);
 		updateCameraVectors();
 	}
 }
@@ -250,6 +301,9 @@ void Window::display_callback(GLFWwindow* window)
 		todraw->draw();
 	}
 
+	//treetest->draw(shaderProgram);
+	sphere->draw(shaderProgram);
+	sphere2->draw(shaderProgram);
 
 	cube->draw();
 	// Gets events, including input such as keyboard and mouse or window resizing
@@ -465,10 +519,32 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 				right = true;
 				left = false;
 				break;
-			/*case GLFW_KEY_C:
-				Window::cullingEnabled = !Window::cullingEnabled;
-				std::cout << "culling: " << Window::cullingEnabled << std::endl;
-				break;*/
+			case GLFW_KEY_R:
+				if(mods==GLFW_MOD_SHIFT)
+					treetest->toWorld = treetest->toWorld * glm::rotate(glm::mat4(1.0f), -5 / 180.0f * glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+
+				else
+					treetest->toWorld = treetest->toWorld * glm::rotate(glm::mat4(1.0f), 5 / 180.0f * glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+				
+				break;
+
+			case GLFW_KEY_V:
+
+				if (mods == GLFW_MOD_SHIFT)
+					treetest->toWorld = treetest->toWorld * glm::scale(glm::mat4(1), glm::vec3(0.5f, 0.5f, 0.5f));
+				else
+					treetest->toWorld = treetest->toWorld *glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
+
+				break;
+
+			case GLFW_KEY_U:
+
+				if (mods == GLFW_MOD_SHIFT)
+					treetest->toWorld = treetest->toWorld * glm::translate(glm::mat4(1.0f), glm::vec3(5, 0, 0));
+				else
+					treetest->toWorld = treetest->toWorld * glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 0));
+
+				break;
 		}
 	}
 	else if (action == GLFW_RELEASE)
