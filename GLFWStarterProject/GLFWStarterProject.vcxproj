@@ -26,6 +26,7 @@
     <ClInclude Include="..\OBJObject.h" />
     <ClInclude Include="..\stb_image.h" />
     <ClInclude Include="..\Transform.h" />
+    <ClInclude Include="..\Tree.h" />
     <ClInclude Include="..\Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +36,7 @@
     <ClCompile Include="..\OBJObject.cpp" />
     <ClCompile Include="..\shader.cpp" />
     <ClCompile Include="..\Transform.cpp" />
+    <ClCompile Include="..\Tree.cpp" />
     <ClCompile Include="..\Window.cpp" />
   </ItemGroup>
   <ItemGroup>

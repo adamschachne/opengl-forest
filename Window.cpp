@@ -7,7 +7,7 @@
 
 const char* window_title = "GLFW Starter Project";
 Cube * cube;
-OBJObject * tree;
+Tree * tree;
 OBJObject * currentObj;
 std::vector<Geometry *> trees;
 // selectable objects
@@ -42,7 +42,7 @@ const float Window::ZOOM = 45.0f;
 float Yaw = Window::YAW;
 float Pitch = Window::PITCH;
 // Camera options
-float MovementSpeed = 0.5f;
+float MovementSpeed = 0.05f;
 float MouseSensitivity = 0.1f;
 float Zoom = 45.0f;
 // Camera Attributes
@@ -71,7 +71,7 @@ bool Window::forward = false;
 bool Window::backward = false;
 bool Window::right = false;
 bool Window::left = false;
-OBJObject * treetest;
+Tree * treetest;
 OBJObject * sphere;
 OBJObject * sphere2;
 
@@ -117,17 +117,17 @@ void Window::initialize_objects()
 {
 	shaderProgram = LoadShaders(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 	cube = new Cube();
-	tree = new OBJObject("../treemesh3.obj");
+	tree = new Tree("../treee.obj");
 	//tree->scale(30.0f);
-	treetest = new OBJObject("../treemesh3.obj");
+	treetest = new Tree("../treemesh3.obj");
 	//treetest->scale(300.0f);
 	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(300, 300,300));
 	treetest->toWorld = treetest->toWorld * scaleMat;
-	sphere = new OBJObject("../sphere.obj");
+	//sphere = new OBJObject("../sphere.obj");
 	//sphere->scale(10.0f);
-	sphere2 = new OBJObject("../sphere.obj");
+	//sphere2 = new OBJObject("../sphere.obj");
 	//sphere2->scale(20.0f);
-	sphere->translate(0, tree->y_min, 0);
+	//sphere->translate(0, tree->y_min, 0);
 	//treetest->scale(30.0f);
 	//glm::mat4 world, GLuint * VAO, int size, GLuint shaderprogram, glm::vec3 color, unsigned int id
 	float rot;
@@ -138,8 +138,8 @@ void Window::initialize_objects()
 	float max = tree->y_max;
 	float transx;
 	float transz;
-	const float treescale = 2500;
-	const int treevariance = 5000;
+	const float treescale = 50;
+	const int treevariance = 25;
 	const int transvar = 500;
 
 	glm::mat4 rotation;
@@ -302,8 +302,8 @@ void Window::display_callback(GLFWwindow* window)
 	}
 
 	//treetest->draw(shaderProgram);
-	sphere->draw(shaderProgram);
-	sphere2->draw(shaderProgram);
+	//sphere->draw(shaderProgram);
+	//sphere2->draw(shaderProgram);
 
 	cube->draw();
 	// Gets events, including input such as keyboard and mouse or window resizing

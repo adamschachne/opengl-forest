@@ -1,5 +1,5 @@
-#ifndef OBJOBJECT_H
-#define OBJOBJECT_H
+#ifndef TREE_H
+#define TREE_H
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -24,15 +24,7 @@
 #include <sstream>
 #include <iostream>
 
-struct Material {
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
-	//void draw(GLuint shaderProgram);
-	float shininess;
-};
-
-class OBJObject
+class Tree
 {
 private:
 	//std::vector<std::pair<char, glm::vec3>> vertices;
@@ -44,22 +36,19 @@ private:
 	float orbitDeg;
 	float angle;
 	glm::vec3 mid;
-	Material mat;
 public:
 	float scaleVal;
 	float initialScaleVal;
 	glm::mat4 toWorld;
 	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec3> normals;
+	std::vector<glm::vec2> normals;
 	std::vector<unsigned int> indices;
 	void print();
-	OBJObject(const char* filepath);
-	~OBJObject();
+	Tree(const char* filepath);
+	~Tree();
 	void parse(const char* filepath);
 	void draw(GLuint);
 	void update();
-	void spin(float);
-	void orbit(float);
 	void scale(float);
 	void translate(float, float, float);
 	void reset();
@@ -70,7 +59,12 @@ public:
 	GLuint uProjection, uModelview;
 	float y_min;
 	float y_max;
-	const char * faces;
+	const std::vector<std::string> faces = { "../treetexture.jpg" };
+	const char * faces2 = "../treetexture.png";
+	unsigned int loadTexture(const char *path);
+	unsigned int loadMap(std::vector<std::string>);
+	unsigned int cubemapTexture;
+	GLint treeshader;
 };
 
 #endif
