@@ -51,7 +51,15 @@ public:
 	glm::mat4 toWorld;
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
+	std::vector<glm::vec2> textureCoordinates;
+
+	std::vector<glm::vec3> mappedVertices;
+	std::vector<glm::vec3> mappedNormals;
+	std::vector<glm::vec2> mappedTextureCoordinates;
+
 	std::vector<unsigned int> indices;
+	std::vector<unsigned int> normalIndices;
+	std::vector<unsigned int> textureIndices;
 	void print();
 	OBJObject(const char* filepath);
 	~OBJObject();

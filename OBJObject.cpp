@@ -20,65 +20,54 @@ OBJObject::OBJObject(const char *filepath)
 	center();	*/
 	reset();
 
-	if (filepath == "../cone.obj") {
-		mat.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
-		mat.specular = glm::vec3(0.0f,0.0f,0.0f);
-		mat.diffuse = glm::vec3(0.0f,0.0f,0.0f);
-		mat.shininess = 0.5f;
-	}
-	else if (filepath == "../sphere.obj") {
-		mat.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
-		mat.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-		mat.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-		mat.shininess = 0.0f;
-	}
-	else if (filepath == "../bunny.obj") {
-		mat.ambient = glm::vec3(0.4f,0.25f,0.67f);
-		mat.specular = glm::vec3(0.5f,0.5750f,0.2750f);
-		mat.diffuse = glm::vec3(0.0f,0.0f,0.0f);
-		mat.shininess = 0.4f;
-	} else if (filepath == "../dragon.obj") {
-		mat.ambient = glm::vec3(0.0f, 0.0f, 0.0f);
-		mat.specular = glm::vec3(0.0f, 0.0f, 0.0f);
-		mat.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-		mat.shininess = 0.0f;
-	} else {
-		mat.ambient = glm::vec3(0.41f, 0.31f, 0.41f);
-		mat.specular = glm::vec3(0.92f, 0.89f, 0.93f);
-		mat.diffuse = glm::vec3(0.79f, 0.92f, 0.98f);
-		mat.shininess = 0.7f;
-	}
-	
+	mat.ambient = glm::vec3(0.41f, 0.31f, 0.41f);
+	mat.specular = glm::vec3(0.92f, 0.89f, 0.93f);
+	mat.diffuse = glm::vec3(0.79f, 0.92f, 0.98f);
+	mat.shininess = 0.7f;
+
 	// Create array object and buffers. Remember to delete your buffers when the object is destroyed!
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
-	glGenBuffers(1, &VBO2);
+
+	struct Vertex {
+		glm::vec3 Position;
+		glm::vec3 Normal;
+		glm::vec2 TexCoords;
+	};
+
+	std::vector<Vertex> verts;
+	for (int i = 0; i < indices.size(); i++) {
+		verts.push_back({
+			mappedVertices[i],
+			mappedNormals[i],
+			mappedTextureCoordinates[i]
+		});
+	}
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0,
-		3,
-		GL_FLOAT, 
-		GL_FALSE, 
-		3 * sizeof(GLfloat),
-		(GLvoid*)0); 	
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1,
-		3, 
-		GL_FLOAT,
-		GL_FALSE, 
-		3 * sizeof(GLfloat),
-		(GLvoid*)0); 
+	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), &verts[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+		&indices[0], GL_STATIC_DRAW);
+
+	// vertex positions
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	// vertex normals
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+	// vertex texture coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
 	glBindVertexArray(0);
 }
 
@@ -158,6 +147,7 @@ void OBJObject::parse(const char *filepath)
 	float x, y, z;  // vertex coordinates
 	float r, g, b;  // vertex color
 	vector<string> toks;
+	vector<string> toksSlash;
 	int lines = 0;
 	float x_min, x_max;
 	float z_min, z_max;
@@ -170,75 +160,82 @@ void OBJObject::parse(const char *filepath)
 		if (str[0] != 'v' && str[0] != 'f') {
 			continue;
 		}
-		toks = split(str, ' ');
-		std::string::size_type sz;     // alias of size_t
-		int i = 0;
-		for (auto num = ++toks.begin(); num != toks.end(); ++num, ++i) {
-			//cout << *num << ", ";
-			if (i == 0) {
-				x = strtof((*num).c_str(), 0);
-			}
-			else if (i == 1) {
-				y = strtof((*num).c_str(), 0);
-			}
-			else if (i == 2) {
-				z = strtof((*num).c_str(), 0);
-			}
-			else if (i == 3) {
-				r = strtof((*num).c_str(), 0);
-			}
-			else if (i == 4) {
-				g = strtof((*num).c_str(), 0);
-			}
-			else if (i == 5) {
-				b = strtof((*num).c_str(), 0);
+		if (str[0] == 'f') {
+			toks = split(str, ' ');
+			//std::cout << toks[1] << toks[2] << toks[3] << std::endl;
+			for (int i = 1; i < 4; i++) {
+				toksSlash = split(toks[i], '/');
+				//std::cout << toksSlash[0] << toksSlash[1] << toksSlash[2] << std::endl;
+				for (int j = 0; j < 3; j++) {
+					if (j == 0) {
+						indices.push_back((unsigned int)strtof(toksSlash[j].c_str(), 0) - 1);
+					}
+					if (j == 1) {
+						textureIndices.push_back((unsigned int)strtof(toksSlash[j].c_str(), 0) - 1);
+					}
+					if (j == 2) {
+						normalIndices.push_back((unsigned int)strtof(toksSlash[j].c_str(), 0) - 1);
+					}
+				}
 			}
 		}
-
-		// Populate the face indices, vertices, and normals vectors with the OBJ Object data
-
-
-		if (str[1] == 'n') {
-			// normal
-			/*float x1 = glm::normalize(glm::vec3(x, y, z)).x;
-			float y1 = glm::normalize(glm::vec3(x, y, z)).y;
-			float z1 = glm::normalize(glm::vec3(x, y, z)).z;
-			normals.push_back(glm::vec3((x1+1)/2, (y1+1)/2, (z1+1)/2));*/
-			normals.push_back(glm::vec3(x, y, z));
-			//vertices.push_back(pair<char, glm::vec3>('n', glm::vec3(x, y, z)));
-		}
-		else if (str[0] == 'v') {
-			if (str[1] == 't') {
+		else { // str[0] == 'v'
+			toks = split(str, ' ');
+			std::string::size_type sz;     // alias of size_t
+			int i = 0;
+			for (auto num = ++toks.begin(); num != toks.end(); ++num, ++i) {
+				//cout << *num << ", ";
+				if (i == 0) {
+					x = strtof((*num).c_str(), 0);
+				}
+				else if (i == 1) {
+					y = strtof((*num).c_str(), 0);
+				}
+				else if (i == 2) {
+					z = strtof((*num).c_str(), 0);
+				}
+				else if (i == 3) {
+					r = strtof((*num).c_str(), 0);
+				}
+				else if (i == 4) {
+					g = strtof((*num).c_str(), 0);
+				}
+				else if (i == 5) {
+					b = strtof((*num).c_str(), 0);
+				}
 			}
-			else {
-				// vertex
-				if (x > x_max) {
-					x_max = x;
-				}
-				if (y > y_max) {
-					y_max = y;
-				}
-				if (z > z_max) {
-					z_max = z;
-				}
-				if (x < x_min) {
-					x_min = x;
-				}
-				if (y < y_min) {
-					y_min = y;
-				}
-				if (z < z_min) {
-					z_min = z;
-				}
-				vertices.push_back(glm::vec3(x, y, z));
-				//std::cout << glm::normalize(glm::vec3(x, y, z)).x << " " << glm::normalize(glm::vec3(x, y, z)).y << " " << glm::normalize(glm::vec3(x, y, z)).z << std::endl;
-				//vertices.push_back(pair<char, glm::vec3>('v', glm::vec3(x, y, z)));
+
+			if (str[1] == 'n') {
+				normals.push_back(glm::vec3(x, y, z));
 			}
-		}
-		else if (str[0] == 'f') {
-			indices.push_back((unsigned int) x - 1);
-			indices.push_back((unsigned int) y - 1);
-			indices.push_back((unsigned int) z - 1);
+			else if (str[0] == 'v') {
+				if (str[1] == 't') { // vt
+					textureCoordinates.push_back(glm::vec2(x, y));
+				}
+				else if (str[1] == 'n') { // vn
+				}
+				else { // vertex				
+					if (x > x_max) {
+						x_max = x;
+					}
+					if (y > y_max) {
+						y_max = y;
+					}
+					if (z > z_max) {
+						z_max = z;
+					}
+					if (x < x_min) {
+						x_min = x;
+					}
+					if (y < y_min) {
+						y_min = y;
+					}
+					if (z < z_min) {
+						z_min = z;
+					}
+					vertices.push_back(glm::vec3(x, y, z));
+				}
+			}
 		}
 	}
 	mid = glm::vec3((x_max + x_min) / 2, (y_max + y_min)/2, (z_max + z_min)/2);
@@ -254,6 +251,13 @@ void OBJObject::parse(const char *filepath)
 	cout << "loaded " << lines << " " << filepath << endl;
 	cout << "number of indices = " << indices.size() << endl;
 	cout << "number of vertices = " << vertices.size() << endl;
+
+	for (int i = 0; i < indices.size(); i++) {
+		mappedVertices.push_back(vertices[indices[i]]);
+		mappedNormals.push_back(normals[normalIndices[i]]);
+		mappedTextureCoordinates.push_back(textureCoordinates[textureIndices[i]]);
+	}
+
 }
 
 void OBJObject::print() {

@@ -2,6 +2,7 @@
 
 in vec3 fragVert;
 in vec3 fragNormal;
+in vec2 TexCoords;
 
 // You can output many things. The first vec4 type output determines the color of the fragment
 out vec4 color;
@@ -12,9 +13,12 @@ out vec4 color;
 uniform vec3 colorIn;
 uniform uint id;
 
+uniform sampler2D texture_diffuse1;
+
 void main()
 
 {
     vec3 norm = normalize(fragNormal);
-    color = vec4(0.2*norm.x, norm.y, norm.z, 1.0f);
+    //color = vec4(0.2*norm.x, norm.y, norm.z, 1.0f);
+	color = texture(texture_diffuse1, TexCoords);
 }

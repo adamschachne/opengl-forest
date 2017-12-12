@@ -68,5 +68,6 @@ public:
 	static bool backward;
 	static bool right;
 	static bool left;
+	static unsigned int TextureFromFile(const char *path, bool gamma = false);
 };
 #endif

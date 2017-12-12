@@ -117,17 +117,19 @@ void Window::initialize_objects()
 {
 	shaderProgram = LoadShaders(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 	cube = new Cube();
+	unsigned int treeTexture = TextureFromFile("../treetexture.png");
+	std::cout << "tree tex = " << treeTexture << std::endl;
 	tree = new OBJObject("../treemesh3.obj");
 	//tree->scale(30.0f);
 	treetest = new OBJObject("../treemesh3.obj");
 	//treetest->scale(300.0f);
 	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(300, 300,300));
 	treetest->toWorld = treetest->toWorld * scaleMat;
-	sphere = new OBJObject("../sphere.obj");
+	//sphere = new OBJObject("../sphere.obj");
 	//sphere->scale(10.0f);
-	sphere2 = new OBJObject("../sphere.obj");
+	//sphere2 = new OBJObject("../sphere.obj");
 	//sphere2->scale(20.0f);
-	sphere->translate(0, tree->y_min, 0);
+	//sphere->translate(0, tree->y_min, 0);
 	//treetest->scale(30.0f);
 	//glm::mat4 world, GLuint * VAO, int size, GLuint shaderprogram, glm::vec3 color, unsigned int id
 	float rot;
@@ -302,8 +304,8 @@ void Window::display_callback(GLFWwindow* window)
 	}
 
 	//treetest->draw(shaderProgram);
-	sphere->draw(shaderProgram);
-	sphere2->draw(shaderProgram);
+	//sphere->draw(shaderProgram);
+	//sphere2->draw(shaderProgram);
 
 	cube->draw();
 	// Gets events, including input such as keyboard and mouse or window resizing
@@ -467,6 +469,45 @@ void Window::toggleCameraMode() {
 	}
 	
 	std::cout << "firstPerson mode " << (firstPerson ? "enabled" : "disabled") << std::endl;
+}
+
+unsigned int Window::TextureFromFile(const char *path, bool gamma)
+{
+	std::string filename = std::string(path);
+
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
 }
 
 void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
