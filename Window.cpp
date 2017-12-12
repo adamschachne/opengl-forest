@@ -299,6 +299,12 @@ void Window::display_callback(GLFWwindow* window)
 	// Use the shader of programID
 	glUseProgram(shaderProgram);
 
+	if (forward) {
+		glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 1);
+	}
+	else {
+		glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
+	}
 	for (auto todraw : trees) {
 		todraw->draw();
 	}
