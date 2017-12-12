@@ -7,8 +7,9 @@
 // The vertex shader gets called once per vertex.
 
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec3 normal;
-layout (location = 2) in vec2 aTexCoords;
+layout (location = 1) in vec2 aTexCoords;
+layout (location = 2) in vec3 normal;
+
 
 uniform mat4 projection;
 uniform mat4 modelview;
