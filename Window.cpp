@@ -297,11 +297,11 @@ void Window::display_callback(GLFWwindow* window)
 	// Use the shader of programID
 	glUseProgram(shaderProgram);
 
-	for (auto todraw : trees) {
-		todraw->draw();
-	}
+	//for (auto todraw : trees) {
+	//	todraw->draw();
+	//}
 
-	//treetest->draw(shaderProgram);
+	treetest->draw(shaderProgram);
 	//sphere->draw(shaderProgram);
 	//sphere2->draw(shaderProgram);
 
