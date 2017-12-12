@@ -198,7 +198,7 @@ void OBJObject::parse(const char *filepath)
 		// Populate the face indices, vertices, and normals vectors with the OBJ Object data
 
 
-		if (str[1] == 't') {
+		if (str[1] == 'n') {
 			// normal
 			/*float x1 = glm::normalize(glm::vec3(x, y, z)).x;
 			float y1 = glm::normalize(glm::vec3(x, y, z)).y;
@@ -208,7 +208,7 @@ void OBJObject::parse(const char *filepath)
 			//vertices.push_back(pair<char, glm::vec3>('n', glm::vec3(x, y, z)));
 		}
 		else if (str[0] == 'v') {
-			if (str[1] == 'n') {
+			if (str[1] == 't') {
 			}
 			else {
 				// vertex
