@@ -290,9 +290,8 @@ void OBJObject::draw(GLuint shaderProgram)
 
 	glUseProgram(shaderProgram);
 	glUniform1i(glGetUniformLocation(shaderProgram, "texture_diffuse1"), 1);
-	std::cout << "fucking nigs die ultimate" << std::endl;
 	glActiveTexture(GL_TEXTURE1);
-	
+
 	glBindTexture(GL_TEXTURE_2D, 2);
 	// Calculate the combination of the model and view (camera inverse) matrices
 	glm::mat4 modelview = Window::V * toWorld;
@@ -302,7 +301,7 @@ void OBJObject::draw(GLuint shaderProgram)
 	// Get the location of the uniform variables "projection" and "modelview"
 	uProjection = glGetUniformLocation(shaderProgram, "projection");
 	uModelview = glGetUniformLocation(shaderProgram, "modelview");
-	
+
 	// Now send these values to the shader program
 	glUniformMatrix4fv(uProjection, 1, GL_FALSE, &Window::P[0][0]);
 	glUniformMatrix4fv(uModelview, 1, GL_FALSE, &modelview[0][0]);

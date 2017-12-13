@@ -37,7 +37,7 @@ void Geometry::draw()
 	glUniformMatrix4fv(uModelview, 1, GL_FALSE, &modelview[0][0]);
 	// Now draw the cube. We simply need to bind the VAO associated with it.
 	glBindVertexArray(VAO);
-
+	glDepthFunc(GL_LEQUAL);
 	glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, 0);
 	// Unbind the VAO when we're done so we don't accidentally draw extra stuff or tamper with its bound buffers
 	glBindVertexArray(0);

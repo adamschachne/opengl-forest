@@ -15,9 +15,20 @@ uniform uint id;
 uniform int blur = 0;
 uniform sampler2D texture_diffuse1;
 
-void main()
+float near = 0.1; 
+float far  = 100.0;
 
+float LinearizeDepth(float depth) 
 {
+    float z = depth * 2.0 - 1.0; // back to NDC 
+    return (2.0 * near * far) / (far + near - z * (far - near));	
+}
+
+void main()
+{
+	float depth = LinearizeDepth(gl_FragCoord.z) / far;
+
+
     vec3 norm = normalize(fragNormal);
     //color = vec4(0.2*norm.x, norm.y, norm.z, 1.0f);
 	if (blur == 1) {
@@ -29,8 +40,14 @@ void main()
 							  /* framebuffer */
 				sum += texture(texture_diffuse1, vec2(TexCoords.x + x * blurSizeH, TexCoords.y + y * blurSizeV)) / 25.0;
    
-		color = sum;
+		//color = sum;
+		color = vec4(vec3(depth), 1.0);
 	} else {
-		color = texture(texture_diffuse1, TexCoords);
+		vec4 texcolor = texture(texture_diffuse1, TexCoords);
+		//color = texture(texture_diffuse1, TexCoords);
+		if (depth > 0.5 && depth < 0.7)
+			color = vec4(vec3(depth), 1.0)*texcolor;
+		else
+			color = vec4(vec3(depth), 1.0);
 	}
 }

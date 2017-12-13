@@ -72,10 +72,13 @@ bool Window::backward = false;
 bool Window::right = false;
 bool Window::left = false;
 OBJObject * treetest;
+OBJObject * treetest2;
 OBJObject * sphere;
 OBJObject * sphere2;
-
-
+bool activateDOF;
+bool blur;
+GLuint Window::fb;
+GLuint Window::depth_rb;
 
 bool Window::firstPerson = false;
 
@@ -122,9 +125,12 @@ void Window::initialize_objects()
 	tree = new OBJObject("../treemesh3.obj");
 	//tree->scale(30.0f);
 	treetest = new OBJObject("../treemesh3.obj");
+	treetest2 = new OBJObject("../treemesh3.obj");
 	//treetest->scale(300.0f);
 	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(300, 300,300));
 	treetest->toWorld = treetest->toWorld * scaleMat;
+	treetest2->toWorld = treetest2->toWorld * scaleMat;
+	treetest2->toWorld = (glm::translate(glm::mat4(1.0f), glm::vec3(100.0f, 0.0f, 30.0f))) * treetest2->toWorld;
 	//sphere = new OBJObject("../sphere.obj");
 	//sphere->scale(10.0f);
 	//sphere2 = new OBJObject("../sphere.obj");
@@ -188,6 +194,10 @@ void Window::clean_up()
 {
 	delete(cube);
 	delete(tree);
+	glDeleteRenderbuffersEXT(1, &depth_rb);
+	//Bind 0, which means render to back buffer, as a result, fb is unbound
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glDeleteFramebuffersEXT(1, &fb);
 	//delete(robots);
 	glDeleteProgram(shaderProgram);
 }
@@ -299,21 +309,54 @@ void Window::display_callback(GLFWwindow* window)
 	// Use the shader of programID
 	glUseProgram(shaderProgram);
 
-	if (forward) {
-		glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 1);
+	if (blur)
+	{
+		if (forward) {
+			glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 1);
+		}
+		else {
+			glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
+		}
 	}
+
+	//for (auto todraw : trees) {
+	//	todraw->draw();
+	//}
+
+	if (activateDOF) {
+		glm::vec3 eye = Window::Position;
+		float aperture = 0.05;
+		glm::mat4 projection = P;
+		glm::vec3 object = glm::vec3(treetest->toWorld[3].x, treetest->toWorld[3].y, treetest->toWorld[3].z);
+
+		glm::vec3 right = glm::normalize(glm::cross(object - eye, Up));
+		glm::vec3 p_up = glm::normalize(glm::cross(object - eye, right));
+		glm::vec3 bokeh = right * cosf(0 * 2 * glm::pi<float>() / 1) + p_up * sinf(0 * 2 * glm::pi<float>() / 1);
+		glm::mat4 modelview = glm::lookAt(eye + aperture, object, p_up);
+		glm::mat4 mvp = projection * modelview;
+		cube->draw();
+		for (auto todraw : trees) {
+			todraw->draw();
+		}
+		glAccum(0 ? GL_ACCUM : GL_LOAD, 1.0 / 1);
+
+		glAccum(GL_RETURN, 1);
+		glfwSwapBuffers(window);
+	}
+
+
 	else {
-		glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
-	}
-	for (auto todraw : trees) {
-		todraw->draw();
+		cube->draw();
+		for (auto todraw : trees) {
+			todraw->draw();
+		}
 	}
 
 	//treetest->draw(shaderProgram);
 	//sphere->draw(shaderProgram);
 	//sphere2->draw(shaderProgram);
 
-	cube->draw();
+	//cube->draw();
 	// Gets events, including input such as keyboard and mouse or window resizing
 	glfwPollEvents();
 	// Swap buffers
@@ -505,6 +548,38 @@ unsigned int Window::TextureFromFile(const char *path, bool gamma)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+		glGenFramebuffersEXT(1, &fb);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, textureID, 0);
+
+		glGenRenderbuffersEXT(1, &depth_rb);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_rb);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, 256, 256);
+
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_rb);
+
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClearDepth(1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//-------------------------
+		glViewport(0, 0, 256, 256);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0.0, 256.0, 0.0, 256.0, -1.0, 1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		//-------------------------
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+
+		//pixels 0, 1, 2 should be white
+		//pixel 4 should be black
+		//----------------
+		//Bind 0, which means render to back buffer
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
 		stbi_image_free(data);
 	}
 	else
@@ -591,6 +666,18 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 				else
 					treetest->toWorld = treetest->toWorld * glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 0));
 
+				break;
+
+			case GLFW_KEY_B:
+				activateDOF = !activateDOF;
+				break;
+
+			case GLFW_KEY_M:
+				if(blur)
+					glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
+				else
+					glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 1);
+				blur = !blur;
 				break;
 		}
 	}
