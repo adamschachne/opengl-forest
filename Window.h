@@ -73,5 +73,6 @@ public:
 	static GLuint fb;
 	static GLuint depth_rb;
 	static unsigned int hdrFBO;
+	static unsigned int hdrFBO2;
 };
 #endif

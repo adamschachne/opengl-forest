@@ -38,6 +38,8 @@
     <ClCompile Include="..\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\blurshader.frag" />
+    <None Include="..\blurshader.vert" />
     <None Include="..\coloshader.frag" />
     <None Include="..\coloshader.vert" />
     <None Include="..\screenshader.frag" />

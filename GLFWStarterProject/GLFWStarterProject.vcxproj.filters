@@ -89,5 +89,11 @@
     <None Include="..\screenshader.frag">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="..\blurshader.vert">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\blurshader.frag">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

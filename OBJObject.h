@@ -79,7 +79,8 @@ public:
 	GLuint uProjection, uModelview;
 	float y_min;
 	float y_max;
-	void drawScreen(GLuint, unsigned int);
+	void drawScreen(GLuint, unsigned int *);
+	void OBJObject::copyVAO(GLuint shaderProgram, unsigned int * texturebuffer);
 };
 
 #endif

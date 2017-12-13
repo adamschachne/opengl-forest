@@ -1,6 +1,6 @@
 #version 330 core
 layout (location = 0) out vec4 FragColor;
-//layout (location = 1) out vec4 BlurColor;
+layout (location = 1) out vec4 BlurColor;
 //out vec4 FragColor;
 
 in vec3 fragVert;
@@ -12,9 +12,11 @@ uniform vec3 colorIn;
 uniform uint id;
 uniform int blur = 0;
 uniform sampler2D texture_diffuse1;
+uniform float winwidth;
+uniform float winheight;
 
 float near = 0.1; 
-float far  = 100.0;
+float far  = 500.0;
 
 float LinearizeDepth(float depth) 
 {
@@ -25,16 +27,25 @@ float LinearizeDepth(float depth)
 void main()
 {        
 
+	float blurAmt;
+	vec2 center = vec2(winwidth / 2, winheight / 2);
+	float dist = distance(center,vec2(gl_FragCoord.x,gl_FragCoord.y));
+
+	vec4 texcolo = texture(texture_diffuse1, TexCoords);
 	float depth = LinearizeDepth(gl_FragCoord.z) / far;
 	   // FragColor = vec4(vec3(depth), 1.0);
-    FragColor = texture(texture_diffuse1, TexCoords);
+	texcolo.x = texcolo.x + (depth*.001);
+    FragColor = texcolo;
 
-	//depth testing
-   // if (depth > 0.5 && depth < 0.7)
-	//	BlurColor = vec4(vec3(1.0,0.1,0.1), 1.0);
-	//else
-	//	BlurColor = vec4(vec3(depth), 1.0);
+	BlurColor = texcolo;
+	//depth testing - if it is in the focal range then make it black
+    if (depth > 0.3 && depth < 0.5){
+		if( dist < 200 ){
+				BlurColor =  vec4(0, 0, 0, 1.0);
+		}
+	}
 
 	//FragColor = vec4(vec3(0.7,0.1,0.4), 1.0);
-
+	//if color is black then add together
+	//else (assume same), so just use one, but look at depth and shift amt of times, increasing for far depth from norm
 }
