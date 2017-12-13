@@ -80,7 +80,7 @@ public:
 	float y_min;
 	float y_max;
 	void drawScreen(GLuint, unsigned int *);
-	void OBJObject::copyVAO(GLuint shaderProgram, unsigned int * texturebuffer);
+	void OBJObject::copyFBO(GLuint shaderProgram, unsigned int * texturebuffer);
 };
 
 #endif

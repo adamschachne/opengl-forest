@@ -87,9 +87,9 @@ unsigned int focal_distance = 0.3;
 unsigned int focal_length = 0.3;
 GLuint Window::hdrFBO;
 GLuint treeTexture;
-GLuint textureColorbuffer[2];
+GLuint textureColorbuffer[3];
 GLuint rbo;
-GLuint Window::hdrFBO2;
+GLuint Window::pingpongFBO[2];
 GLuint textureColorbuffer2[2];
 GLuint rbo2;
 
@@ -205,6 +205,15 @@ void Window::initialize_objects()
 		//std::cout << "max: " << tree->y_max << std::endl;
 	}
 	updateCameraVectors();
+
+	glUseProgram(coloShaderProgram);
+	glUniform1i(glGetUniformLocation(coloShaderProgram, "texture_diffuse1"), 0);
+	glUseProgram(blurShaderProgram);
+	glUniform1i(glGetUniformLocation(blurShaderProgram, "image"), 0);
+	glUseProgram(screenShaderProgram);
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "scene"), 0);
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "blur"), 1);
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "depthscene"), 2);
 }
 
 // Treat this as a destructor function. Delete dynamically allocated memory here.
@@ -321,7 +330,7 @@ void Window::display_callback(GLFWwindow* window)
 	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
 	// Clear the color and depth buffers
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
@@ -358,16 +367,39 @@ void Window::display_callback(GLFWwindow* window)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 	
-	//tree->copyFBO(blurShaderProgram,textureColorbuffer);
+	bool horizontal = true, first_iteration = true;
+	unsigned int amount = 10;
+	glUseProgram(blurShaderProgram);
+	for (unsigned int i = 0; i < amount; i++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "horizontal"), horizontal);
+		glBindTexture(GL_TEXTURE_2D, first_iteration ? textureColorbuffer[1] : textureColorbuffer2[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+		tree->drawScreen(screenShaderProgram, textureColorbuffer);
+		horizontal = !horizontal;
+		if (first_iteration)
+			first_iteration = false;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
-
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(screenShaderProgram);
-	tree->drawScreen(screenShaderProgram,textureColorbuffer);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer2[!horizontal]);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer[2]);
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "toblur"), true);
+	
+	//shaderBloomFinal.setFloat("exposure", exposure);
+	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//glClear(GL_COLOR_BUFFER_BIT);
+
+	//glUseProgram(screenShaderProgram);
+	tree->drawScreen(screenShaderProgram, textureColorbuffer);
+
+	
 
 
 	//treetest->draw(shaderProgram);
@@ -581,16 +613,14 @@ unsigned int Window::TextureFromFile(const char *path, bool gamma)
 
 void Window::setupFBOs()
 {
-	glUniform1i(glGetUniformLocation(coloShaderProgram, "texture_diffuse1"), 0);
-	glUniform1i(glGetUniformLocation(screenShaderProgram, "screenTexture"), 0);
 	//unsigned int textureID;
 	//glGenTextures(1, &textureID);
 
 	glGenFramebuffers(1, &hdrFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-	glGenTextures(2, textureColorbuffer);
+	glGenTextures(3, textureColorbuffer);
 
-	for (unsigned int i = 0; i < 2; i++)
+	for (unsigned int i = 0; i < 3; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, textureColorbuffer[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Window::width, Window::height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -601,8 +631,8 @@ void Window::setupFBOs()
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, textureColorbuffer[i], 0);
 	}
 
-	unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, attachments);
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
 	
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
@@ -614,32 +644,28 @@ void Window::setupFBOs()
 
 
 	//-------------------second framebuffer-------------------
-	/*
-	glGenFramebuffers(1, &hdrFBO2);
-	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO2);
+	
+	glGenFramebuffers(2, pingpongFBO);
 	glGenTextures(2, textureColorbuffer2);
 	for (unsigned int i = 0; i < 2; i++)
 	{
+		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
 		glBindTexture(GL_TEXTURE_2D, textureColorbuffer2[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Window::width, Window::height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, Window::width, Window::height, 0, GL_RGB, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textureColorbuffer2[i], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer2[i], 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "Framebuffer not complete!" << std::endl;
 	}
+	
+}
 
-	//unsigned int attachments2[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	//glDrawBuffers(2, attachments2);
+void Window::copyFBO(GLuint shaderProgram, unsigned int * texturebuffer)
+{
 
-	glGenRenderbuffers(1, &rbo2);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo2);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, Window::width, Window::height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo2);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	*/
 }
 
 

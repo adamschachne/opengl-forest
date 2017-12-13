@@ -18,7 +18,7 @@ Geometry::~Geometry()
 
 void Geometry::draw()
 {
-	glUseProgram(shaderprogram);
+	//glUseProgram(shaderprogram);
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindTexture(GL_TEXTURE_2D, 1);

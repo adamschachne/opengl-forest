@@ -336,37 +336,7 @@ void OBJObject::draw(GLuint shaderProgram)
 void OBJObject::drawScreen(GLuint shaderProgram, unsigned int * texturebuffer)
 {
 	glBindVertexArray(quadVAO);
-	bool horizontal = true, first_iteration = true;
-	unsigned int amount = 2;
-	//texturebuffer[0] contains the unblurred scene
-	//texturebuffer[1] contains the blurred scene
-	//glBindTexture(GL_TEXTURE_2D, texturebuffer[0]);
-	//for (unsigned int i = 0; i < amount; i++)
-	//{
-		//glUniform1i(glGetUniformLocation(shaderProgram, "i"), 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texturebuffer[1]);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-	//}
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, texturebuffer);
-}
-
-void OBJObject::copyVAO(GLuint shaderProgram, unsigned int * texturebuffer)
-{
-	glBindVertexArray(quadVAO);
-	bool horizontal = true, first_iteration = true;
-	unsigned int amount = 2;
-	//texturebuffer[0] contains the unblurred scene
-	//texturebuffer[1] contains the blurred scene
-	//glBindTexture(GL_TEXTURE_2D, texturebuffer[0]);
-	//for (unsigned int i = 0; i < amount; i++)
-	//{
-	//glUniform1i(glGetUniformLocation(shaderProgram, "i"), i);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texturebuffer[0]);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//}
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, texturebuffer);
+	glBindVertexArray(0);
 }

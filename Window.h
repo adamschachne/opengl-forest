@@ -73,6 +73,7 @@ public:
 	static GLuint fb;
 	static GLuint depth_rb;
 	static unsigned int hdrFBO;
-	static unsigned int hdrFBO2;
+	static unsigned int pingpongFBO[2];
+	static void copyFBO(GLuint shaderProgram, unsigned int * texturebuffer);
 };
 #endif
