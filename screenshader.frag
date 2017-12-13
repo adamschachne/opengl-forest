@@ -24,7 +24,10 @@ void main()
 
     vec3 bloomColor = texture(blur, TexCoords).rgb;
     //if(toblur)
-       // hdrColor += bloomColor; // additive blending
+       
+	   //hdr * 0.2 + bloom * 0.8 < very blurry
+	   //hdr * 0.9 + bloom * 0.1 < very sharp
+
     // tone mapping
     //vec3 result = vec3(1.0) - exp(-hdrColor * exposure);
     // also gamma correct while we're at it       
@@ -33,7 +36,7 @@ void main()
    vec3 result = hdrColor; // CHANGE THIS LATER TO CHOOSE BLENDING AMT DEPENDING ON DEPTH/XY
   // if ((result.x - 0.00004) < 0.1)
 	// result = vec3(1.0,0.3,0.4);
-	if (depth < 0.5 && depth > 0.3)
-		result = vec3(0.0,0.0,1.0);
-   FragColor = vec4(result, 1.0);
+	//if (depth < 0.5 && depth > 0.3)
+	//	result = vec3(0.0,0.0,1.0);
+   FragColor = vec4(bloomColor, 1.0);
 }
