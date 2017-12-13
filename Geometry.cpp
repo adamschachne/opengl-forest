@@ -19,10 +19,9 @@ Geometry::~Geometry()
 void Geometry::draw()
 {
 	glUseProgram(shaderprogram);
-	glUniform1i(glGetUniformLocation(shaderprogram, "texture_diffuse1"), 1);
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE0);
 
-	glBindTexture(GL_TEXTURE_2D, 2);
+	glBindTexture(GL_TEXTURE_2D, 1);
 	// Calculate the combination of the model and view (camera inverse) matrices
 	glm::mat4 modelview = Window::V * toWorld;
 

@@ -69,7 +69,9 @@ public:
 	static bool right;
 	static bool left;
 	static unsigned int TextureFromFile(const char *path, bool gamma = false);
+	static void setupFBOs();
 	static GLuint fb;
 	static GLuint depth_rb;
+	static unsigned int hdrFBO;
 };
 #endif

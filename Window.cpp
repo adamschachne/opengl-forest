@@ -20,6 +20,8 @@ std::vector<Node *> curves;
 OBJObject * Window::currentLight;
 int Window::targetObject = 0; // 0 currentObj, 1 directional, 2 point, and 3 spot light
 GLint shaderProgram;
+GLint screenShaderProgram;
+GLint coloShaderProgram;
 
 // On some systems you need to change this to the absolute path
 #define VERTEX_SHADER_PATH "../shader.vert"
@@ -79,6 +81,12 @@ bool activateDOF;
 bool blur;
 GLuint Window::fb;
 GLuint Window::depth_rb;
+unsigned int focal_distance = 0.3;
+unsigned int focal_length = 0.3;
+GLuint Window::hdrFBO;
+GLuint treeTexture;
+GLuint textureColorbuffer;
+GLuint rbo;
 
 bool Window::firstPerson = false;
 
@@ -119,18 +127,22 @@ void Window::resetLight() {
 void Window::initialize_objects()
 {
 	shaderProgram = LoadShaders(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
-	cube = new Cube();
-	unsigned int treeTexture = TextureFromFile("../treetexture.png");
+	screenShaderProgram = LoadShaders("../screenshader.vert", "../screenshader.frag");
+	coloShaderProgram = LoadShaders("../coloshader.vert", "../coloshader.frag");
+	//cube = new Cube();
+	treeTexture = TextureFromFile("../treetexture.png");
+	setupFBOs();
 	std::cout << "tree tex = " << treeTexture << std::endl;
+	//unsigned int * colorbuffers = setupFBOs();
 	tree = new OBJObject("../treemesh3.obj");
 	//tree->scale(30.0f);
-	treetest = new OBJObject("../treemesh3.obj");
-	treetest2 = new OBJObject("../treemesh3.obj");
+	//treetest = new OBJObject("../treemesh3.obj");
+	//treetest2 = new OBJObject("../treemesh3.obj");
 	//treetest->scale(300.0f);
 	glm::mat4 scaleMat = glm::scale(glm::mat4(1), glm::vec3(300, 300,300));
-	treetest->toWorld = treetest->toWorld * scaleMat;
-	treetest2->toWorld = treetest2->toWorld * scaleMat;
-	treetest2->toWorld = (glm::translate(glm::mat4(1.0f), glm::vec3(100.0f, 0.0f, 30.0f))) * treetest2->toWorld;
+	//treetest->toWorld = treetest->toWorld * scaleMat;
+	//treetest2->toWorld = treetest2->toWorld * scaleMat;
+	//treetest2->toWorld = (glm::translate(glm::mat4(1.0f), glm::vec3(100.0f, 0.0f, 30.0f))) * treetest2->toWorld;
 	//sphere = new OBJObject("../sphere.obj");
 	//sphere->scale(10.0f);
 	//sphere2 = new OBJObject("../sphere.obj");
@@ -179,7 +191,7 @@ void Window::initialize_objects()
 			glm::translate(glm::mat4(1.0f), glm::vec3(transx, offset, transz))*rotation, 
 			&(tree->VAO), 
 			tree->indices.size(), 
-			shaderProgram, 
+			coloShaderProgram, 
 			glm::vec3(0.1f, 0.8f, 0.1f), 
 			i);
 		trees.push_back(geom);
@@ -200,6 +212,8 @@ void Window::clean_up()
 	glDeleteFramebuffersEXT(1, &fb);
 	//delete(robots);
 	glDeleteProgram(shaderProgram);
+	glDeleteProgram(coloShaderProgram);
+	glDeleteProgram(screenShaderProgram);
 }
 
 GLFWwindow* Window::create_window(int width, int height)
@@ -293,21 +307,15 @@ void Window::idle_callback()
 void Window::display_callback(GLFWwindow* window)
 {
 	
-	// Measure speed
-	double currentTime = glfwGetTime();
-	nbFrames++;
-	if (currentTime - lastTime >= 1.0) { // If last prinf() was more than 1 sec ago
-										 // printf and reset timer
-		//printf("%f ms/frame\n", 1000.0 / double(nbFrames));
-		nbFrames = 0;
-		lastTime += 1.0;
-	}
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
 	// Clear the color and depth buffers
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 
 	// Use the shader of programID
-	glUseProgram(shaderProgram);
+	glUseProgram(coloShaderProgram);
 
 	if (blur)
 	{
@@ -346,11 +354,21 @@ void Window::display_callback(GLFWwindow* window)
 
 
 	else {
-		cube->draw();
+		//cube->draw();
 		for (auto todraw : trees) {
 			todraw->draw();
 		}
 	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDisable(GL_DEPTH_TEST);
+
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(screenShaderProgram);
+	tree->drawScreen(screenShaderProgram,textureColorbuffer);
+
 
 	//treetest->draw(shaderProgram);
 	//sphere->draw(shaderProgram);
@@ -523,9 +541,9 @@ void Window::toggleCameraMode() {
 unsigned int Window::TextureFromFile(const char *path, bool gamma)
 {
 	std::string filename = std::string(path);
-
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
+	GLuint colorBuffers;
+	//glGenTextures(2, colorBuffers);
+	glGenTextures(1, &colorBuffers);
 
 	int width, height, nrComponents;
 	unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
@@ -539,46 +557,17 @@ unsigned int Window::TextureFromFile(const char *path, bool gamma)
 		else if (nrComponents == 4)
 			format = GL_RGBA;
 
-		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		//for (unsigned int i = 0; i < 2; i++)
+		//{
+			glBindTexture(GL_TEXTURE_2D, colorBuffers);
+			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		glGenFramebuffersEXT(1, &fb);
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, textureID, 0);
-
-		glGenRenderbuffersEXT(1, &depth_rb);
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_rb);
-		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, 256, 256);
-
-		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_rb);
-
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
-		glClearColor(0.0, 0.0, 0.0, 0.0);
-		glClearDepth(1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//-------------------------
-		glViewport(0, 0, 256, 256);
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0.0, 256.0, 0.0, 256.0, -1.0, 1.0);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		//-------------------------
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-
-		//pixels 0, 1, 2 should be white
-		//pixel 4 should be black
-		//----------------
-		//Bind 0, which means render to back buffer
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//}
 
 		stbi_image_free(data);
 	}
@@ -587,9 +576,35 @@ unsigned int Window::TextureFromFile(const char *path, bool gamma)
 		std::cout << "Texture failed to load at path: " << path << std::endl;
 		stbi_image_free(data);
 	}
-
-	return textureID;
+	//std::cout << "colorbuffers[0]: " << colorBuffers[0] << "colorbuffers[1]: " << colorBuffers[1] << std::endl;
+	return colorBuffers;
 }
+
+void Window::setupFBOs()
+{
+	glUniform1i(glGetUniformLocation(coloShaderProgram, "texture_diffuse1"), 1);
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "screenTexture"), 0);
+	//unsigned int textureID;
+	//glGenTextures(1, &textureID);
+
+	glGenFramebuffers(1, &hdrFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	glGenTextures(1, &textureColorbuffer);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Window::width, Window::height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, Window::width, Window::height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 
 void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -670,6 +685,28 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 
 			case GLFW_KEY_B:
 				activateDOF = !activateDOF;
+				break;
+
+			case GLFW_KEY_K:
+				if (mods == GLFW_MOD_SHIFT) {
+					if (focal_distance <= 0.9)
+						focal_distance += 0.1;
+				}
+				else {
+					if (focal_distance >= 0.1)
+						focal_distance -= 0.1;
+				}
+				break;
+
+			case GLFW_KEY_J:
+				if (mods == GLFW_MOD_SHIFT) {
+					if (focal_length <= 0.9)
+						focal_length += 0.1;
+				}
+				else {
+					if (focal_length >= 0.1)
+						focal_length -= 0.1;
+				}
 				break;
 
 			case GLFW_KEY_M:

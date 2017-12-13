@@ -84,6 +84,27 @@ OBJObject::OBJObject(const char *filepath)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, newArray.size() * sizeof(unsigned int), newArray.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+							 // positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
+
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
 OBJObject::~OBJObject() {
@@ -311,4 +332,11 @@ void OBJObject::draw(GLuint shaderProgram)
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	// Unbind the VAO when we're done so we don't accidentally draw extra stuff or tamper with its bound buffers
 	glBindVertexArray(0);
+}
+void OBJObject::drawScreen(GLuint shaderProgram, unsigned int texturebuffer)
+{
+	glBindVertexArray(quadVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texturebuffer);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
