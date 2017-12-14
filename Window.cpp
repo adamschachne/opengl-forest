@@ -359,7 +359,7 @@ void Window::display_callback(GLFWwindow* window)
 	bool horizontal = true, first_iteration = true;
 	unsigned int amount = 25;
 	if(rendermode == 2) // blur
-		amount = MovementSpeed*20;
+		amount = MovementSpeed*10;
 	glUseProgram(blurShaderProgram);
 	for (unsigned int i = 0; i < amount; i++)
 	{

@@ -20,7 +20,7 @@ void main()
 		moving = false;
 	if(rendermode == 2){ //motion blur
 		if(moving){
-			vec2 center = vec2(720/2,720/2);
+			vec2 center = vec2(1.0,TexCoords.y);
 			//center = normalize(center);
 			//vec2 normtex = normalize(TexCoords);
 			vec2 lines = center - TexCoords;
@@ -33,6 +33,8 @@ void main()
 			}
 
 			lines = normalize(lines);
+			float strength = distance(TexCoords,center);
+
 
 			//center - TexCoords;
 			vec2 tex_offset = 1.0 / textureSize(image, 0); // gets size of single texel
@@ -41,23 +43,23 @@ void main()
 			if(right== 1 || left==1){
 				for(int i = 1; i < 5; ++i)
 				{
-					result += texture(image, TexCoords + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
-					result += texture(image, TexCoords - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+					result += texture(image, TexCoords + (lines * vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
+					result += texture(image, TexCoords - (lines * vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
 				}
 			}
 
 			else if(forward== 1 || backward == 1){
-				for(int i = 1; i < 5; ++i)
-				{
-					result += texture(image, TexCoords  + vec2((tex_offset.x + lines.x) * i,(tex_offset.y + lines.y) * i)).rgb * weight[i];
-					result += texture(image, TexCoords  - vec2((tex_offset.x + lines.x) * i, (tex_offset.y + lines.y) * i)).rgb * weight[i];
-				}	
+					for(int i = 1; i < 5; ++i)
+					{
+							result += texture(image, TexCoords + (strength*lines * vec2(tex_offset.x * i, tex_offset.y * i))).rgb * weight[i];
+							result += texture(image, TexCoords - (strength* lines * vec2(tex_offset.x * i, tex_offset.y * i))).rgb * weight[i];
+					}
 			}
 	 
 	 //forward + right
 	 //result += texture(image, TexCoords + (lines * vec2(tex_offset.x * i, tex_offset.y * i))).rgb * weight[i];
 	 //result += texture(image, TexCoords - (lines * vec2(tex_offset.x * i, tex_offset.y * i))).rgb * weight[i];
-			FragColor = vec4(result, 1.0);
+	 					FragColor = vec4(result, 1.0);
 		}
 		else{
 			vec2 center = vec2(360/2,720/2);
