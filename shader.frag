@@ -32,15 +32,14 @@ void main()
 	//vec4 D = mul(H, g_ViewProjectionInverseMatrix);
 	//vec4 worldPos = D / D.w;
 
-	const float blurSizeH = 1.0 / 300.0;
-	const float blurSizeV = 1.0 / 200.0;
-	vec4 sum = vec4(0.0);
-	for (int x = -2; x <= 2; x++)
-		for (int y = -2; y <= 2; y++)
-							/* framebuffer */
-			sum += texture(texture_diffuse1, vec2(TexCoords.x + x * blurSizeH, TexCoords.y + y * blurSizeV)) / 25.0;
+	//const float blurSizeH = 1.0 / 300.0;
+	//const float blurSizeV = 1.0 / 200.0;
+	//vec4 sum = vec4(0.0);
+	//for (int x = -2; x <= 2; x++)
+	//	for (int y = -2; y <= 2; y++)
+			//sum += texture(texture_diffuse1, vec2(TexCoords.x + x * blurSizeH, TexCoords.y + y * blurSizeV)) / 25.0;
    
-	color = sum;
+	color = texture(texture_diffuse1, TexCoords);
 
 
 

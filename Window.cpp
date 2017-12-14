@@ -16,8 +16,8 @@ std::vector<Geometry *> trees;
 int Window::selectedIndex = -1;
 Geometry * selected = 0;
 
-#define VERTEX_SHADER_PATH "../shader.vert"
-#define FRAGMENT_SHADER_PATH "../shader.frag"
+#define VERTEX_SHADER_PATH "../skyboxshader.vert"
+#define FRAGMENT_SHADER_PATH "../skyboxshader.frag"
 
 std::vector<Node *> curves;
 OBJObject * Window::currentLight;
@@ -46,7 +46,7 @@ const float Window::ZOOM = 45.0f;
 float Yaw = Window::YAW;
 float Pitch = Window::PITCH;
 // Camera options
-float MovementSpeed = 0.3f;
+float MovementSpeed = 1.3f;
 float MouseSensitivity = 0.1f;
 float Zoom = 45.0f;
 // Camera Attributes
@@ -92,6 +92,7 @@ GLuint rbo;
 GLuint Window::pingpongFBO[2];
 GLuint textureColorbuffer2[2];
 GLuint rbo2;
+int rendermode = 0;
 
 bool Window::firstPerson = false;
 
@@ -204,6 +205,7 @@ void Window::initialize_objects()
 		//std::cout << "min: " << tree->y_min << std::endl;
 		//std::cout << "max: " << tree->y_max << std::endl;
 	}
+	//cube = new Cube();
 	updateCameraVectors();
 
 	glUseProgram(coloShaderProgram);
@@ -327,6 +329,7 @@ void Window::display_callback(GLFWwindow* window)
 {
 	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
 
 	// Clear the color and depth buffers
@@ -337,44 +340,36 @@ void Window::display_callback(GLFWwindow* window)
 	// Use the shader of programID
 	glUseProgram(coloShaderProgram);
 
-	if (blur)
-	{
-		if (forward) {
-			glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 1);
-		}
-		else {
-			glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
-		}
-	}
+
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "focusWidth"), focus_width);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "focusDistance"), focus_distance);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winwidth"), Window::width);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winheight"), Window::height);
-	if (activateDOF) {
-		cube->draw();
-		for (auto todraw : trees) {
-			todraw->draw();
-		}
-	}
 
-	else {
-		//cube->draw();
-		for (auto todraw : trees) {
-			todraw->draw();
-		}
-	}
 
+	for (auto todraw : trees) {
+		todraw->draw();
+	}
+	//glUseProgram(shaderProgram);
+	//cube->draw();
 	//reset framebuffer and disable depth test, then copy rendered FBO to other FBO for blurring
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
-	
+
 	bool horizontal = true, first_iteration = true;
 	unsigned int amount = 25;
+	if(rendermode == 2) // blur
+		amount = MovementSpeed*20;
 	glUseProgram(blurShaderProgram);
 	for (unsigned int i = 0; i < amount; i++)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
 		glUniform1i(glGetUniformLocation(blurShaderProgram, "horizontal"), horizontal);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "rendermode"), rendermode);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "forward"), forward);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "backward"), backward);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "right"), right);
+		glUniform1i(glGetUniformLocation(blurShaderProgram, "left"), left);
 		glBindTexture(GL_TEXTURE_2D, first_iteration ? textureColorbuffer[1] : textureColorbuffer2[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
 		tree->drawScreen(screenShaderProgram, textureColorbuffer);
 		horizontal = !horizontal;
@@ -391,16 +386,14 @@ void Window::display_callback(GLFWwindow* window)
 	glBindTexture(GL_TEXTURE_2D, textureColorbuffer2[!horizontal]);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, textureColorbuffer[2]);
-	glUniform1i(glGetUniformLocation(screenShaderProgram, "toblur"), true);
-	
+	glUniform1i(glGetUniformLocation(screenShaderProgram, "rendermode"), rendermode);
+
 	//shaderBloomFinal.setFloat("exposure", exposure);
 	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT);
 
 	//glUseProgram(screenShaderProgram);
 	tree->drawScreen(screenShaderProgram, textureColorbuffer);
-
-	
 
 
 	//treetest->draw(shaderProgram);
@@ -680,29 +673,11 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 				// Close the window. This causes the program to also terminate.
 				glfwSetWindowShouldClose(window, GL_TRUE);
 				break;
-			case GLFW_KEY_N:
-				colorMode = !colorMode;
-				break;
-			case GLFW_KEY_P:
-				break;
-			case GLFW_KEY_H:
-				break;
-			case GLFW_KEY_0:
-				Window::targetObject = 0;
-				break;
-			case GLFW_KEY_1:
-				if (currentLight != 0) {
-					resetLight();
-				}
-				currentLight = 0;
-				Window::targetObject = 1;
-				//std::cout << "directional light selected" << std::endl;			
-				Window::lightMode = 0;
-				Window::lightPosition = glm::vec3(2.0f, 2.0f, 5.0f);
-				Window::lightDirection = glm::vec3(-2.0f, -2.0f, -2.0f);
-				break;
 			case GLFW_KEY_C:
-				Window::toggleCameraMode();
+				if (mods == GLFW_MOD_SHIFT)
+					MovementSpeed = MovementSpeed *0.5;
+				else
+					MovementSpeed = MovementSpeed *1.5;
 				break;
 			case GLFW_KEY_W:
 				forward = true;
@@ -748,7 +723,8 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 				break;
 
 			case GLFW_KEY_B:
-				activateDOF = !activateDOF;
+
+				rendermode = (rendermode + 1 ) %3;
 				break;
 
 			case GLFW_KEY_K:

@@ -20,6 +20,7 @@ public:
 	~Geometry();
 	void draw();
 	void draw(glm::mat4);
+	void draw(GLuint shaderpog);
 	void translate(glm::vec3);
 	void update();
 	float increment;
