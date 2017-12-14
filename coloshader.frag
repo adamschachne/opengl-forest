@@ -17,6 +17,7 @@ uniform float winwidth;
 uniform float winheight;
 uniform float focusDistance;
 uniform float focusWidth;
+uniform int debug;
 
 float near = 0.1; 
 float far  = 200.0;
@@ -60,6 +61,18 @@ void main()
 	}
 
 	depthColor.y = (sideSharpness * depthSharpness);
+
+	if (debug > 0) {
+		if (debug == 1) {
+			depthColor.y = sideSharpness;
+		} else if (debug == 2) {
+			depthColor.y = depthSharpness;
+		} else if (debug == 3) {
+			depthColor.y = (sideSharpness * depthSharpness);
+		}
+		FragColor = depthColor;
+		BlurColor = depthColor; // this is going to get shaken up by blurshader a few times
+	}
 	//depthColor.y = depthSharpness;
 	//depthColor.y = sideSharpness;
 

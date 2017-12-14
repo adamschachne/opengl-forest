@@ -41,7 +41,7 @@ const float Window::PITCH = -30.0f;
 const float Window::SPEED = 2.5f;
 const float Window::SENSITIVTY = 0.1f;
 const float Window::ZOOM = 45.0f;
-
+int debug = 0;
 // Eular Angles
 float Yaw = Window::YAW;
 float Pitch = Window::PITCH;
@@ -347,8 +347,7 @@ void Window::display_callback(GLFWwindow* window)
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "focusDistance"), focus_distance);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winwidth"), Window::width);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winheight"), Window::height);
-
-
+	glUniform1i(glGetUniformLocation(coloShaderProgram, "debug"), debug);
 	
 	for (auto todraw : trees) {
 		todraw->draw();
@@ -697,6 +696,22 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 			case GLFW_KEY_D:
 				right = true;
 				left = false;
+				break;
+
+			case GLFW_KEY_Y:
+				debug = 0;
+				break;
+
+			case GLFW_KEY_U:
+				debug = 1;
+				break;
+
+			case GLFW_KEY_I:
+				debug = 2;
+				break;
+
+			case GLFW_KEY_O:
+				debug = 3;
 				break;
 
 			case GLFW_KEY_B:
