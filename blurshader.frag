@@ -20,7 +20,7 @@ void main()
 		moving = false;
 	if(rendermode == 2){ //motion blur
 		if(moving){
-			vec2 center = vec2(1.0,TexCoords.y);
+			vec2 center = vec2(0.5,0.5);
 			//center = normalize(center);
 			//vec2 normtex = normalize(TexCoords);
 			vec2 lines = center - TexCoords;
@@ -43,8 +43,8 @@ void main()
 			if(right== 1 || left==1){
 				for(int i = 1; i < 5; ++i)
 				{
-					result += texture(image, TexCoords + (lines * vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
-					result += texture(image, TexCoords - (lines * vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
+					result += texture(image, TexCoords + ( vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
+					result += texture(image, TexCoords - ( vec2(tex_offset.x * i, 0.0))).rgb * weight[i];
 				}
 			}
 

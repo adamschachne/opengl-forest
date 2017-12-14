@@ -205,7 +205,7 @@ void Window::initialize_objects()
 		//std::cout << "min: " << tree->y_min << std::endl;
 		//std::cout << "max: " << tree->y_max << std::endl;
 	}
-	//cube = new Cube();
+	cube = new Cube();
 	updateCameraVectors();
 
 	glUseProgram(coloShaderProgram);
@@ -329,12 +329,14 @@ void Window::display_callback(GLFWwindow* window)
 {
 	//glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-
-	// Clear the color and depth buffers
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Clear the color and depth buffers
+	
 	glEnable(GL_DEPTH_TEST);
 
 	// Use the shader of programID
@@ -347,19 +349,20 @@ void Window::display_callback(GLFWwindow* window)
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winheight"), Window::height);
 
 
+	
 	for (auto todraw : trees) {
 		todraw->draw();
 	}
+	cube->draw();
 	//glUseProgram(shaderProgram);
-	//cube->draw();
 	//reset framebuffer and disable depth test, then copy rendered FBO to other FBO for blurring
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
 	bool horizontal = true, first_iteration = true;
-	unsigned int amount = 25;
+	unsigned int amount = 35;
 	if(rendermode == 2) // blur
-		amount = MovementSpeed*10;
+		amount = MovementSpeed*20;
 	glUseProgram(blurShaderProgram);
 	for (unsigned int i = 0; i < amount; i++)
 	{
@@ -370,7 +373,7 @@ void Window::display_callback(GLFWwindow* window)
 		glUniform1i(glGetUniformLocation(blurShaderProgram, "backward"), backward);
 		glUniform1i(glGetUniformLocation(blurShaderProgram, "right"), right);
 		glUniform1i(glGetUniformLocation(blurShaderProgram, "left"), left);
-		glBindTexture(GL_TEXTURE_2D, first_iteration ? textureColorbuffer[1] : textureColorbuffer2[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+		glBindTexture(GL_TEXTURE_2D, first_iteration ? textureColorbuffer[0] : textureColorbuffer2[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
 		tree->drawScreen(screenShaderProgram, textureColorbuffer);
 		horizontal = !horizontal;
 		if (first_iteration)
@@ -694,32 +697,6 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 			case GLFW_KEY_D:
 				right = true;
 				left = false;
-				break;
-			case GLFW_KEY_R:
-				if(mods==GLFW_MOD_SHIFT)
-					treetest->toWorld = treetest->toWorld * glm::rotate(glm::mat4(1.0f), -5 / 180.0f * glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
-
-				else
-					treetest->toWorld = treetest->toWorld * glm::rotate(glm::mat4(1.0f), 5 / 180.0f * glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
-				
-				break;
-
-			case GLFW_KEY_V:
-
-				if (mods == GLFW_MOD_SHIFT)
-					treetest->toWorld = treetest->toWorld * glm::scale(glm::mat4(1), glm::vec3(0.5f, 0.5f, 0.5f));
-				else
-					treetest->toWorld = treetest->toWorld *glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
-
-				break;
-
-			case GLFW_KEY_U:
-
-				if (mods == GLFW_MOD_SHIFT)
-					treetest->toWorld = treetest->toWorld * glm::translate(glm::mat4(1.0f), glm::vec3(5, 0, 0));
-				else
-					treetest->toWorld = treetest->toWorld * glm::translate(glm::mat4(1.0f), glm::vec3(-5, 0, 0));
-
 				break;
 
 			case GLFW_KEY_B:

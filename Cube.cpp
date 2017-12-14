@@ -13,9 +13,10 @@ Cube::Cube()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-	cubemapTexture = loadCubemap(faces);
 	skyboxshader = LoadShaders("../skyboxshader.vert", "../skyboxshader.frag");
 	glUseProgram(skyboxshader);
+	cubemapTexture = loadCubemap(faces);
+	std::cout << "baa: " << cubemapTexture << std::endl;
 	glUniform1i(glGetUniformLocation(skyboxshader, "skybox"), 0);
 }
 
