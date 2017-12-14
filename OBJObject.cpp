@@ -84,6 +84,27 @@ OBJObject::OBJObject(const char *filepath)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, newArray.size() * sizeof(unsigned int), newArray.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+							 // positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
+
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
 OBJObject::~OBJObject() {
@@ -290,9 +311,8 @@ void OBJObject::draw(GLuint shaderProgram)
 
 	glUseProgram(shaderProgram);
 	glUniform1i(glGetUniformLocation(shaderProgram, "texture_diffuse1"), 1);
-	std::cout << "fucking nigs die ultimate" << std::endl;
 	glActiveTexture(GL_TEXTURE1);
-	
+
 	glBindTexture(GL_TEXTURE_2D, 2);
 	// Calculate the combination of the model and view (camera inverse) matrices
 	glm::mat4 modelview = Window::V * toWorld;
@@ -302,7 +322,7 @@ void OBJObject::draw(GLuint shaderProgram)
 	// Get the location of the uniform variables "projection" and "modelview"
 	uProjection = glGetUniformLocation(shaderProgram, "projection");
 	uModelview = glGetUniformLocation(shaderProgram, "modelview");
-	
+
 	// Now send these values to the shader program
 	glUniformMatrix4fv(uProjection, 1, GL_FALSE, &Window::P[0][0]);
 	glUniformMatrix4fv(uModelview, 1, GL_FALSE, &modelview[0][0]);
@@ -311,5 +331,12 @@ void OBJObject::draw(GLuint shaderProgram)
 
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	// Unbind the VAO when we're done so we don't accidentally draw extra stuff or tamper with its bound buffers
+	glBindVertexArray(0);
+}
+void OBJObject::drawScreen(GLuint shaderProgram, unsigned int * texturebuffer)
+{
+	glBindVertexArray(quadVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }

@@ -75,9 +75,12 @@ public:
 	float orbitAmt;
 	// These variables are needed for the shader program
 	GLuint VBO, VBO2, VAO, EBO;
+	GLuint quadVAO, quadVBO;
 	GLuint uProjection, uModelview;
 	float y_min;
 	float y_max;
+	void drawScreen(GLuint, unsigned int *);
+	void OBJObject::copyFBO(GLuint shaderProgram, unsigned int * texturebuffer);
 };
 
 #endif
