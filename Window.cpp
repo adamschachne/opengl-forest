@@ -46,7 +46,7 @@ const float Window::ZOOM = 45.0f;
 float Yaw = Window::YAW;
 float Pitch = Window::PITCH;
 // Camera options
-float MovementSpeed = 0.5f;
+float MovementSpeed = 0.3f;
 float MouseSensitivity = 0.1f;
 float Zoom = 45.0f;
 // Camera Attributes
@@ -83,8 +83,8 @@ bool activateDOF;
 bool blur;
 GLuint Window::fb;
 GLuint Window::depth_rb;
-unsigned int focal_distance = 0.3;
-unsigned int focal_length = 0.3;
+float focus_distance = 0.1;
+float focus_width = 150.0;
 GLuint Window::hdrFBO;
 GLuint treeTexture;
 GLuint textureColorbuffer[3];
@@ -346,7 +346,8 @@ void Window::display_callback(GLFWwindow* window)
 			glUniform1i(glGetUniformLocation(shaderProgram, "blur"), 0);
 		}
 	}
-
+	glUniform1f(glGetUniformLocation(coloShaderProgram, "focusWidth"), focus_width);
+	glUniform1f(glGetUniformLocation(coloShaderProgram, "focusDistance"), focus_distance);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winwidth"), Window::width);
 	glUniform1f(glGetUniformLocation(coloShaderProgram, "winheight"), Window::height);
 	if (activateDOF) {
@@ -368,7 +369,7 @@ void Window::display_callback(GLFWwindow* window)
 	glDisable(GL_DEPTH_TEST);
 	
 	bool horizontal = true, first_iteration = true;
-	unsigned int amount = 10;
+	unsigned int amount = 25;
 	glUseProgram(blurShaderProgram);
 	for (unsigned int i = 0; i < amount; i++)
 	{
@@ -752,23 +753,23 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 
 			case GLFW_KEY_K:
 				if (mods == GLFW_MOD_SHIFT) {
-					if (focal_distance <= 0.9)
-						focal_distance += 0.1;
+					if (focus_distance <= 0.9)
+						focus_distance += 0.01;
 				}
 				else {
-					if (focal_distance >= 0.1)
-						focal_distance -= 0.1;
+					if (focus_distance >= 0.1)
+						focus_distance -= 0.01;
 				}
 				break;
 
 			case GLFW_KEY_J:
 				if (mods == GLFW_MOD_SHIFT) {
-					if (focal_length <= 0.9)
-						focal_length += 0.1;
+					if (focus_width <= 200)
+						focus_width += 20;
 				}
 				else {
-					if (focal_length >= 0.1)
-						focal_length -= 0.1;
+					if (focus_width > 0)
+						focus_width -= 20;
 				}
 				break;
 
